@@ -20,16 +20,19 @@ print_welcome_string:
     call print
     ret
 print: #Expects pointer to the string to be in si
-    xorb %bh, %bh #xor the bh register
-    movb $0xE, %ah #sets teletype mode for interrupt 0x10
+    #xorb %bh, %bh #xor the bh register (probably not needed)
+    #movb $0b0100, %bl #sets color to red (needs to be on correct graphics mode to work)
 
-    lodsb
+    movb $0xE, %ah #sets teletype mode for interrupt 0x10 (Only needed once?)
+print_loop:
+
+    lodsb #Loads byte at si into al and increments si
 
     cmpb $0, %al #Checks if current character is NULL
     je print_ret #Jumps to return if the character is NULL
 
     int $0x10 #Prints character to the screen
-    jmp print #Loops to beginning
+    jmp print_loop #Loops to beginning
 
 print_ret:
     ret
@@ -41,8 +44,6 @@ end:
 
 welcome_string:
     .asciz "U MAD BRO?"
-welcome_string_end:
-
 
 .fill 510-(.-_start), 1, 0
 .word 0xAA55
