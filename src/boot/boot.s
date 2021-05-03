@@ -11,13 +11,14 @@ _start:
 
     sti
 
-    movw $welcome_string, %si
-    call print
-
-
+    call print_welcome_string
 
     jmp end
 
+print_welcome_string:
+    movw $welcome_string, %si
+    call print
+    ret
 print: #Expects pointer to the string to be in si
     xorb %bh, %bh #xor the bh register
     movb $0xE, %ah #sets teletype mode for interrupt 0x10
@@ -34,6 +35,7 @@ print_ret:
     ret
 
 end:
+    call print_welcome_string #Loop prints U MAD BRO
     jmp end #Infinite loop (like a boss)
 
 
