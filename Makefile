@@ -16,18 +16,19 @@ BOOTSECTORSRC := src/boot/boot.s
 BOOTSECTOROBJ := $(BOOTSECTORSRC:.s=.o)
 BOOTSECTOROUT := bootsector.bin
 
-OBJTARGETS :=
+KERNEL_C_SRCS := $(wildcard src/kernel/*.c)
+KERNEL_S_SRCS := $(wildcard src/kernel/*.s)
+KERNEL_OBJS := $(KERNEL_C_SRCS:.c=.o) $(KERNEL_S_SRCS:.s=.o)
+
+KERNELOUT := kernel.bin
 
 OUT_IMAGE := bin/trollfaceos.img
 
 %.o: %.s
 	$(AS) -o $@ -c $< $(ASMFLAGS)
 
-#$(OUTDIR)/%.o: $(SRCDIR)/%.s
-#	$(AS) -o $@ -c $< $(ASMFLAGS)
-
-#$(OUTDIR)/%.o: $(SRCDIR)/%.c
-#	$(CC) -c -o $@ $< $(CFLAGS)
+%.o: %.c
+	$(CC) -o $@ -c $< $(CCFLAGS)
 
 all: dirs boot img
 
@@ -37,6 +38,10 @@ dirs:
 boot: $(BOOTSECTOROBJ)
 	$(LD) -o ./$(OUTDIR)/$(BOOTSECTOROUT) $^ -Ttext 0x7C00 --oformat=binary
 
-img: dirs boot
+kernel: $(KERNEL_OBJS)
+	$(LD) -o ./bin/$(KERNELOUT) $^ $(LDFLAGS) -T$(LINKERSCRIPT)
+
+img: dirs boot kernel
 	dd if=/dev/zero of=$(OUT_IMAGE) bs=512 count=2880
 	dd if=./$(OUTDIR)/$(BOOTSECTOROUT) of=$(OUT_IMAGE) conv=notrunc bs=512 seek=0 count=1
+	dd if=./bin/$(KERNELOUT) of=$(OUT_IMAGE) conv=notrunc bs=512 seek=1 count=2048
