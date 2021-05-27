@@ -10,8 +10,6 @@ def main(imgPath):
     img = Image.open(imgPath,'r')
     img = img.convert("RGB")
     width, height = img.size
-    if width != 320 and height != 200:
-        print("Image must be 320x200!")
     pixel_values = list(img.getdata())
     channels = 3
     pixel_values = numpy.array(pixel_values).reshape((width, height, channels))

@@ -4,7 +4,7 @@ AS := i686-elf-as
 CC := i686-elf-gcc
 LD := i686-elf-ld
 
-CFLAGS :=
+CFLAGS := -Wno-builtin-declaration-mismatch
 ASMFLAGS :=
 
 LINKERSCRIPT := linkerscript.ld
@@ -28,7 +28,7 @@ OUT_IMAGE := bin/trollfaceos.img
 	$(AS) -o $@ -c $< $(ASMFLAGS)
 
 %.o: %.c
-	$(CC) -o $@ -c $< $(CCFLAGS)
+	$(CC) -o $@ -c $< $(CFLAGS)
 
 all: dirs boot img
 
@@ -36,12 +36,13 @@ dirs:
 	@mkdir -p $(OUTDIR)
 
 boot: $(BOOTSECTOROBJ)
-	$(LD) -o ./$(OUTDIR)/$(BOOTSECTOROUT) $^ -Ttext 0x7C00 --oformat=binary
+	@$(LD) -o ./$(OUTDIR)/$(BOOTSECTOROUT) $^ -Ttext 0x7C00 --oformat=binary
 
 kernel: $(KERNEL_OBJS)
 	$(LD) -o ./bin/$(KERNELOUT) $^ $(LDFLAGS) -T$(LINKERSCRIPT)
 
+
 img: dirs boot kernel
-	dd if=/dev/zero of=$(OUT_IMAGE) bs=512 count=2880
-	dd if=./$(OUTDIR)/$(BOOTSECTOROUT) of=$(OUT_IMAGE) conv=notrunc bs=512 seek=0 count=1
-	dd if=./bin/$(KERNELOUT) of=$(OUT_IMAGE) conv=notrunc bs=512 seek=1 count=2048
+	@dd if=/dev/zero of=$(OUT_IMAGE) bs=512 count=2880 status=none
+	@dd if=./$(OUTDIR)/$(BOOTSECTOROUT) of=$(OUT_IMAGE) conv=notrunc bs=512 seek=0 count=1 status=none
+	@dd if=./bin/$(KERNELOUT) of=$(OUT_IMAGE) conv=notrunc bs=512 seek=1 count=2048 status=none
