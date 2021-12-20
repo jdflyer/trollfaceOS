@@ -20,9 +20,14 @@ stack_top:
 .global _start
 .type _start, @function
 _start:
-    mov $stack_top, %esp
+    cli
 
     #pre-kernel init
+
+    mov $stack_top, %esp #setup stack
+
+    
+
 
     call kmain
 loop:
