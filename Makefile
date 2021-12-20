@@ -1,48 +1,51 @@
-#TrollfaceOS Makefile
+CC=i386-elf-gcc
+AS=i386-elf-as
+LD=i386-elf-gcc
+CFLAGS=-std=gnu99 -ffreestanding -O2 -Wall -Wextra
+LDFLAGS= -ffreestanding -O2 -nostdlib -lgcc
+MKRESCUE=grub-mkrescue
 
-AS := i686-elf-as
-CC := i686-elf-gcc
-LD := i686-elf-ld
+BUILD=build
+OUTPUTISO=$(BUILD)/trollfaceOS.iso
+KERNEL=$(BUILD)/trollfaceOS.bin
+OBJDIR=$(BUILD)/obj
+FSDIR=$(BUILD)/fs
 
-CFLAGS := -Wno-builtin-declaration-mismatch
-ASMFLAGS :=
+SRCDIR=src
+GRUBCFG=$(SRCDIR)/grub.cfg
+LDSCRIPT=$(SRCDIR)/linker.ld
+SOURCES=$(patsubst $(SRCDIR)/%,%,$(wildcard $(SRCDIR)/*.s) $(wildcard $(SRCDIR)/*.c))
+OBJS=$(patsubst %.s,%.o,$(patsubst %.c,%.o,$(SOURCES)))
+FULLOBJS=$(patsubst %,$(OBJDIR)/%,$(OBJS))
 
-LINKERSCRIPT := linkerscript.ld
+$(OBJDIR)/%.o: $(SRCDIR)/%.s
+	$(AS) $< -o $@
 
-OUTDIR := bin
-SRCDIR := src
-
-BOOTSECTORSRC := src/boot/boot.s
-BOOTSECTOROBJ := $(BOOTSECTORSRC:.s=.o)
-BOOTSECTOROUT := bootsector.bin
-
-KERNEL_C_SRCS := $(wildcard src/kernel/*.c)
-KERNEL_S_SRCS := $(wildcard src/kernel/*.s)
-KERNEL_OBJS := $(KERNEL_C_SRCS:.c=.o) $(KERNEL_S_SRCS:.s=.o)
-
-KERNELOUT := kernel.bin
-
-OUT_IMAGE := bin/trollfaceos.img
-
-%.o: %.s
-	$(AS) -o $@ -c $< $(ASMFLAGS)
-
-%.o: %.c
-	$(CC) -o $@ -c $< $(CFLAGS)
-
-all: dirs boot img
+$(OBJDIR)/%.o: $(SRCDIR)/%.c
+	$(CC) -c $< -o $@ $(CFLAGS)
 
 dirs:
-	@mkdir -p $(OUTDIR)
+	@mkdir -p $(OBJDIR)
 
-boot: $(BOOTSECTOROBJ)
-	@$(LD) -o ./$(OUTDIR)/$(BOOTSECTOROUT) $^ -Ttext 0x7C00 --oformat=binary
+$(KERNEL): $(FULLOBJS)
+	$(LD) -T $(LDSCRIPT) -o $(KERNEL) $(LDFLAGS) $(FULLOBJS)
 
-kernel: $(KERNEL_OBJS)
-	$(LD) -o ./bin/$(KERNELOUT) $^ $(LDFLAGS) -T$(LINKERSCRIPT)
+kernel: $(KERNEL)
 
+$(OUTPUTISO): $(KERNEL)
+	@mkdir -p $(FSDIR)/boot/grub
+	@cp $(KERNEL) $(FSDIR)/boot/
+	@cp $(GRUBCFG) $(FSDIR)/boot/grub/
+	$(MKRESCUE) -o $(OUTPUTISO) $(FSDIR)
 
-img: dirs boot kernel
-	@dd if=/dev/zero of=$(OUT_IMAGE) bs=512 count=2880 status=none
-	@dd if=./$(OUTDIR)/$(BOOTSECTOROUT) of=$(OUT_IMAGE) conv=notrunc bs=512 seek=0 count=1 status=none
-	@dd if=./bin/$(KERNELOUT) of=$(OUT_IMAGE) conv=notrunc bs=512 seek=1 count=2048 status=none
+iso: dirs $(OUTPUTISO)
+
+all: dirs kernel iso
+
+run: all
+	qemu-system-i386 -cdrom $(OUTPUTISO)
+
+.PHONY: clean run
+
+clean:
+	@rm -rfv build
