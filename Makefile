@@ -21,6 +21,7 @@ FSTYPE=vfat
 MNTDIR=$(BUILD)/mnt
 
 SRCDIR=src
+INCLUDEDIR=include
 GRUBCFG=$(SRCDIR)/grub.cfg
 LDSCRIPT=$(SRCDIR)/linker.ld
 SOURCES=$(patsubst $(SRCDIR)/%,%,$(wildcard $(SRCDIR)/*.s) $(wildcard $(SRCDIR)/*.c))
@@ -31,7 +32,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.s
 	$(AS) $< -o $@
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
-	$(CC) -c $< -o $@ $(CFLAGS)
+	$(CC) -c $< -o $@ $(CFLAGS) -I $(INCLUDEDIR)/
 
 dirs:
 	@mkdir -p $(OBJDIR)
