@@ -1,4 +1,2 @@
-The worst operating system imaginable.
-
-Based on the bare-bones tutorial from osdevwiki:
-https://wiki.osdev.org/Bare_Bones
+TrollfaceOS
+<img src="https://upload.wikimedia.org/wikipedia/en/thumb/9/9a/Trollface_non-free.png/220px-Trollface_non-free.png"/>
