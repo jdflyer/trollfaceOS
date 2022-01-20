@@ -33,6 +33,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.s
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) -c $< -o $@ $(CFLAGS) -I $(INCLUDEDIR)/
+	@$(CC) -c $< -S -o $@.s $(CFLAGS) -I $(INCLUDEDIR)/
 
 dirs:
 	@mkdir -p $(OBJDIR)
@@ -40,9 +41,9 @@ dirs:
 $(KERNEL): $(FULLOBJS)
 	$(LD) -T $(LDSCRIPT) -o $(KERNEL) $(LDFLAGS) -Map=$(MAPFILE) $(FULLOBJS)
 
-kernel: $(KERNEL)
+kernel: | dirs $(KERNEL)
 
-fs: dirs $(KERNEL)
+fs:  dirs $(KERNEL)
 	@mkdir -p $(FSDIR)/boot/grub
 	@cp $(KERNEL) $(FSDIR)/boot/
 	@cp $(GRUBCFG) $(FSDIR)/boot/grub/
