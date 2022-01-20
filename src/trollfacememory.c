@@ -37,6 +37,7 @@ void* malloc(size_t size) {
                 curr = (alloc_prefix_t*)(curr+sizeof(alloc_prefix_t)+curr->size);
                 curr->size = size;
                 curr->next = next;
+                curr->prev = prev;
                 next->prev = curr;
                 prev->next = curr;
                 break;
