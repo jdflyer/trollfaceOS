@@ -11,6 +11,7 @@ alloc_prefix_t *const firstAlloc = (alloc_prefix_t*)HEAP_START;
 void malloc_init() {
     firstAlloc->size = 0;
     firstAlloc->next = NULL;
+    firstAlloc->prev = NULL;
 }
 
 void free(void* ptr) {
