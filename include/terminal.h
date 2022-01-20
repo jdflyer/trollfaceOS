@@ -24,7 +24,8 @@ enum vga_color {
 
 #define TCOLOR(fg,bg) (fg|(bg<<4))
 #define TTEXT(char,color) (char|(color<<8))
-#define TBUFFERLOC(term,x,y) ((y*(term->sizeX))+x)
+#define TBUFFERLOC(term,x,y) (((y)*(term->sizeX))+(x))
+#define CLEARCURSORCHAR(term) (term->buffer[TBUFFERLOC(term,term->cursorX,term->cursorY)] = TTEXT(' ',TCOLOR(term->textColor,term->bgColor)))
 
 enum terminalType {
     VGATerm

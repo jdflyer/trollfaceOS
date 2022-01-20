@@ -6,13 +6,7 @@ terminal_t mainterm;
 void tSetCursorPos(terminal_t* terminal, uint32_t x, uint32_t y) {
     terminal->cursorX = x;
     terminal->cursorY = y;
-    if(terminal->type==VGATerm) {
-        uint16_t pos = TBUFFERLOC(terminal,x,y);
-        outb(0x3d4,0xF);
-        outb(0x3d5,(uint8_t)(pos&0xFF));
-        outb(0x3d4,0xE);
-        outb(0x3d4,(uint8_t)((pos>>8)&0xFF));
-    }
+    terminal->buffer[TBUFFERLOC(terminal,x,y)] = TTEXT('_',TCOLOR(terminal->textColor,terminal->bgColor));
 }
 
 void tclear(terminal_t* terminal, uint8_t bgColor) {
@@ -35,9 +29,7 @@ void tinit(terminal_t* terminal,uint8_t termType,uint8_t bgColor, uint32_t sizeX
     case VGATerm:
         terminal->buffer = (uint16_t*)0xB8000;
         outb(0x3D4, 0x0A);
-	    outb(0x3D5, (inb(0x3D5) & 0xC0) | 14);
-	    outb(0x3D4, 0x0B);
-	    outb(0x3D5, (inb(0x3D5) & 0xE0) | 15);
+	    outb(0x3D5, 0x20);
         break;
     }
     tclear(terminal,bgColor);
@@ -46,11 +38,13 @@ void tinit(terminal_t* terminal,uint8_t termType,uint8_t bgColor, uint32_t sizeX
 void tputchar(terminal_t* terminal, char c) {
     switch(c) {
     case '\n':
+        CLEARCURSORCHAR(terminal);
         tSetCursorPos(terminal,0,terminal->cursorY+1);
         break;
     case '\b':
         if(terminal->cursorX>0) {
             terminal->buffer[TBUFFERLOC(terminal,terminal->cursorX-1,terminal->cursorY)] = ' ';
+            CLEARCURSORCHAR(terminal);
             tSetCursorPos(terminal,terminal->cursorX-1,terminal->cursorY);
         }
         break;
@@ -64,18 +58,19 @@ void tputchar(terminal_t* terminal, char c) {
     };
 
     if(terminal->cursorX>terminal->sizeX) {
+        CLEARCURSORCHAR(terminal);
         tSetCursorPos(terminal,0,terminal->cursorY+1);
-        if(terminal->cursorY>terminal->sizeY) {
-            for(size_t y=1;y<terminal->sizeY;y++) {
-                for(size_t x=0;x<terminal->sizeX;x++) {
-                    terminal->buffer[TBUFFERLOC(terminal,x,y-1)] = TBUFFERLOC(terminal,x,y);
-                }
-            }
+    }
+    if(terminal->cursorY>=terminal->sizeY) {
+        for(size_t y=1;y<terminal->sizeY;y++) {
             for(size_t x=0;x<terminal->sizeX;x++) {
-                terminal->buffer[TBUFFERLOC(terminal,x,terminal->sizeY-1)] = ' ';
+                terminal->buffer[TBUFFERLOC(terminal,x,y-1)] = terminal->buffer[TBUFFERLOC(terminal,x,y)];
             }
-            tSetCursorPos(terminal,0,terminal->sizeY-1);
         }
+        for(size_t x=0;x<terminal->sizeX;x++) {
+            terminal->buffer[TBUFFERLOC(terminal,x,terminal->sizeY-1)] = ' ';
+        }
+        tSetCursorPos(terminal,0,terminal->sizeY-1);
     }
 }
 

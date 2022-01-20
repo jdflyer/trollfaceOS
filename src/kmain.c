@@ -1,5 +1,6 @@
 #include "kmain.h"
 #include "terminal.h"
+#include "interrupts.h"
 
 void kmain() {
     setupIdt();
@@ -8,5 +9,4 @@ void kmain() {
     char num[20];
     itoa(21,num,10);
     tputs(&mainterm,num);
-    tSetCursorPos(&mainterm,25,0);
 }
