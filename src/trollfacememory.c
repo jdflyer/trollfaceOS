@@ -1,4 +1,5 @@
 #include "trollfacememory.h"
+#include "terminal.h"
 
 void memset(void* addr, uint8_t data, size_t size) {
     while(size--) {
@@ -26,7 +27,7 @@ void* malloc(size_t size) {
     alloc_prefix_t* curr = firstAlloc;
     while (true) {
         if(curr->next!=NULL) {
-            size_t free_space = (curr->next)-(curr+sizeof(alloc_prefix_t)+curr->size);
+            size_t free_space = ((uint8_t*)(curr->next))-(((uint8_t*)curr)+sizeof(alloc_prefix_t)+curr->size);
             if (free_space<(size+sizeof(alloc_prefix_t))) {
                 //Not enough space, try next allocation
                 curr = curr->next;
@@ -34,7 +35,7 @@ void* malloc(size_t size) {
                 //There's enough free space in the middle of the heap, allocate here
                 alloc_prefix_t* prev = curr;
                 alloc_prefix_t* next = curr->next;
-                curr = (alloc_prefix_t*)(curr+sizeof(alloc_prefix_t)+curr->size);
+                curr = (alloc_prefix_t*)(((uint8_t*)curr)+sizeof(alloc_prefix_t)+curr->size);
                 curr->size = size;
                 curr->next = next;
                 curr->prev = prev;
@@ -45,7 +46,7 @@ void* malloc(size_t size) {
         }else{
             //Allocate on top of the heap
             alloc_prefix_t* prev = curr;
-            curr = (alloc_prefix_t*)(curr+sizeof(alloc_prefix_t)+curr->size);
+            curr = (alloc_prefix_t*)(((uint8_t*)curr)+sizeof(alloc_prefix_t)+curr->size);
             curr->size = size;
             curr->prev = prev;
             prev->next = curr;
@@ -53,6 +54,5 @@ void* malloc(size_t size) {
             break;
         }
     }
-    curr = curr+sizeof(alloc_prefix_t);
-    return curr;
+    return ((uint8_t*)curr)+sizeof(alloc_prefix_t);
 }
